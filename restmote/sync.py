@@ -1,11 +1,13 @@
 import requests
 import logging
-import urlparse
+from urllib.parse import urlparse
+from urllib.parse import urljoin
+
 
 from django.conf import settings
 
 
-root = urlparse.urljoin(settings.RESTMOTE_HOST + ":" + settings.RESTMOTE_PORT, settings.RESTMOTE_API_ROOT)
+root = urljoin(settings.RESTMOTE_HOST + ":" + settings.RESTMOTE_PORT, settings.RESTMOTE_API_ROOT)
 
 
 def get_data(url):
