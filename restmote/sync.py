@@ -2,13 +2,12 @@ import requests
 import logging
 from urllib.parse import urlparse
 from urllib.parse import urljoin
-
+import re
 
 from django.conf import settings
 
 
 root = urljoin(settings.RESTMOTE_HOST + ":" + settings.RESTMOTE_PORT, settings.RESTMOTE_API_ROOT)
-
 
 def get_data(url):
     if hasattr(settings, "RESTMOTE_USER") and hasattr(settings, "RESTMOTE_PASSWORD"):
@@ -18,7 +17,11 @@ def get_data(url):
     if r.status_code == 200:
         logging.info(url)
         logging.info(r.json())
-        return True, r.json()
+        if r.links.get('next'):
+            nexturl=r.links['next']['url']
+        else:
+            nexturl=None
+        return True, r.json(), nexturl
     else:
         logging.info("Connection failed: %s" % r.text)
         return False, []
@@ -45,9 +48,20 @@ def build_objects(obj_class, obj_string, data, field_bindings, nested=[]):
 
 
 def sync_objects(url, qfilter, obj_class, obj_string, field_bindings, nested=[]):
-    status, data = get_data(root + url + '?' + qfilter)
+    if '?' in url:
+        querytoken='&';
+    else:
+        querytoken='?';
+    if re.match("^https://", url) or re.match("^http://", url):
+        targeturl=url
+    else:
+        targeturl=root + url
+
+    status, data, nexturl = get_data(targeturl + querytoken + qfilter)
     if status:
         build_objects(obj_class, obj_string, data, field_bindings, nested)
+        if nexturl:
+            sync_objects(nexturl, qfilter, obj_class, obj_string, field_bindings, nested=[])
         return 1
     else:
         return 0
