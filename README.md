@@ -31,7 +31,7 @@ With those variables defined, we can now create a script (anywhere) that will co
     import django
     import os
 
-    sys.path.append("/path/to/project/project")
+    sys.path.append("/path/to/your_project")
     os.environ["DJANGO_SETTINGS_MODULE"] = "project.settings"
     django.setup()
     from contents.models import GithubUser
