@@ -35,7 +35,7 @@ With those variables defined, we can now create a script (anywhere) that will co
     os.environ["DJANGO_SETTINGS_MODULE"] = "project.settings"
     django.setup()
     from contents.models import GithubUser
-    from restmote.sync import sync_objects
+    from restmote.sync import full_sync
 
 
     githubuser_field_bindings = {
@@ -43,11 +43,9 @@ With those variables defined, we can now create a script (anywhere) that will co
         'avatar_url': 'field2',
     }
 
-    sync_objects("/users", Model1, "githubuser", githubuser_field_bindings)
+   full_sync("/users", "", Model1, githubuser_field_bindings)
 
 
 With this code we would pull github users to our local database and create new instances with 'field1' and 'field2' columns being the 'login' and the 'avatar_url' respectively (you can change the bindings according to your column models).
-
-The "githubuser" string is used to build the id, this will change in future versions so you can specify remote id and local id for each model.
 
 Now you can call this script periodically (using cron) to synchronize your models according to their 'last_modified' field.
