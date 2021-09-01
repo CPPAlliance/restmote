@@ -17,8 +17,8 @@ With this, you will have your models defined in your Django app. To check it is 
 
 Having the previous steps, we now need to define some variables in our `project/project/settings.py` file:
 
-* RESMOTE_HOST: Host where the API REST is serving the data. Ex: 'https://api.github.com/'
-* RESMOTE_PORT: Port where the API REST is serving. Ex: '80'
+* RESTMOTE_HOST: Host where the API REST is serving the data. Ex: 'https://api.github.com/'
+* RESTMOTE_PORT: Port where the API REST is serving. Ex: '80'
 * RESTMOTE_API_ROOT: Root of the API in the server. Just in case the API ROOT is different from the HOST.
 * RESTMOTE_FILTER_FIELD: File to filter data [to improve].
 * RESTMOTE_SNAP_FILE: File to store the last filter [we use date filtering now with last_modified field for the content, to improve].
@@ -46,6 +46,13 @@ With those variables defined, we can now create a script (anywhere) that will co
    full_sync("/users", "", Model1, githubuser_field_bindings)
 
 
-With this code we would pull github users to our local database and create new instances with 'field1' and 'field2' columns being the 'login' and the 'avatar_url' respectively (you can change the bindings according to your column models).
+With this code we would pull github users to our local database and create new instances with 'field1' and 'field2' columns being the 'login' and the 'avatar_url' respectively (you can change the bindings according to your column models). In most cases the bindings will probably be identical mappings:
+
+```
+    githubuser_field_bindings = {
+        'login': 'login',
+        'avatar_url': 'avatar_url',
+    }
+```
 
 Now you can call this script periodically (using cron) to synchronize your models according to their 'last_modified' field.
