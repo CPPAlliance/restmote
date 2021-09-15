@@ -55,4 +55,10 @@ With this code we would pull github users to our local database and create new i
     }
 ```
 
-Now you can call this script periodically (using cron) to synchronize your models according to their 'last_modified' field.
+The additional argument static_field_bindings, provided to either the sync_objects or full_sync functions, is similar to the field_bindings just mentioned. However, it will define static, fixed, fields which are not synced from the remote source.  Rather, you may specify that a certain field should be populated with a certain hardcoded value.
+
+The argument rfilter in the remove_objects function allows you to only remove a certain subset of items. Otherwise, all objects are potentially purged during the removal stage. The purpose of rfilter is to allow storing the results of multiple different syncs in a single table. If each sync and removal applies to a discrete set of objects, and those can be selected/filtered by a simple query filter, then multiple syncs can share a single table. 
+
+It is not necessary to use either static_field_bindings or rfilter. However, when they are used, a common situation would be that those two variables are identical.  Because you mark each set of objects with a certain value when saving them to the database, and that same value is the selector during removal.  
+
+Now you can call this script periodically (using cron) to synchronize your models.  

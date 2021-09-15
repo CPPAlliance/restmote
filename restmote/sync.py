@@ -28,7 +28,7 @@ def get_data(url):
         return False, []
 
 
-def build_objects(obj_class, data, field_bindings, remote_id='id', local_id='id', nested=[]):
+def build_objects(obj_class, data, field_bindings, static_field_bindings={}, remote_id='id', local_id='id', nested=[]):
     global restmote_remote_ids
     for e in data:
 
@@ -47,12 +47,15 @@ def build_objects(obj_class, data, field_bindings, remote_id='id', local_id='id'
             for f in [x for x in e[n] if x in field_bindings]:
                 setattr(o, field_bindings[f], e[n][f])
 
+        for x in static_field_bindings:
+            setattr(o, x, static_field_bindings[x])
+
         setattr(o, local_id, e[remote_id])
         o.save()
         logging.info("Added %s: %s" % (local_id, o.pk))
 
 
-def sync_objects(url, qfilter, obj_class, field_bindings, remote_id='id', local_id='id', nested=[]):
+def sync_objects(url, qfilter, obj_class, field_bindings, static_field_bindings={}, remote_id='id', local_id='id', nested=[]):
     if '?' in url:
         querytoken='&';
     else:
@@ -64,9 +67,9 @@ def sync_objects(url, qfilter, obj_class, field_bindings, remote_id='id', local_
 
     status, data, nexturl = get_data(targeturl + querytoken + qfilter)
     if status:
-        build_objects(obj_class, data, field_bindings, remote_id=remote_id, local_id=local_id, nested=nested)
+        build_objects(obj_class, data, field_bindings, static_field_bindings=static_field_bindings, remote_id=remote_id, local_id=local_id, nested=nested)
         if nexturl:
-            sync_objects(nexturl, qfilter, obj_class, field_bindings, remote_id=remote_id, local_id=remote_id , nested=[])
+            sync_objects(nexturl, qfilter, obj_class, field_bindings, static_field_bindings=static_field_bindings, remote_id=remote_id, local_id=remote_id, nested=nested)
         return 1
     else:
         return 0
@@ -88,19 +91,19 @@ def remove_objects_v1(url, obj_class, obj_string):
     else:
         return 0
 
-def remove_objects(obj_class, local_id='id'):
+def remove_objects(obj_class, local_id='id', rfilter={}):
     """
     Prune items from database table after a sync.
     Because this is comparing against discovered remote values, it must be run in conjunction with sync_objects. Thus, calling it from within full_sync.
     """
-    local_ids = obj_class.objects.values_list(local_id, flat=True)
+    local_ids = obj_class.objects.filter(**rfilter).values_list(local_id, flat=True)
     must_remove = list(set(local_ids).difference(restmote_remote_ids))
     obj_class.objects.filter(**{local_id + '__in': must_remove}).delete()
     if must_remove:
         logging.info("Deleted %s: %s" % (local_id, ', '.join(str(x) for x in must_remove)))
 
-def full_sync(url, qfilter, obj_class, field_bindings, remote_id='id', local_id='id', nested=[]):
+def full_sync(url, qfilter, obj_class, field_bindings, static_field_bindings={}, remote_id='id', local_id='id', rfilter={}, nested=[]):
     global restmote_remote_ids
     restmote_remote_ids=[]
-    sync_objects(url, qfilter, obj_class, field_bindings, remote_id=remote_id, local_id=local_id, nested=[])
-    remove_objects(obj_class, local_id=local_id)
+    sync_objects(url, qfilter, obj_class, field_bindings, static_field_bindings=static_field_bindings, remote_id=remote_id, local_id=local_id, nested=nested)
+    remove_objects(obj_class, local_id=local_id, rfilter=rfilter)
